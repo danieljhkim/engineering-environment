@@ -1,0 +1,31 @@
+# Brewfile.core
+# Baseline developer utilities (language-agnostic)
+
+tap "homebrew/bundle"
+tap "homebrew/cask-fonts"
+
+# Core CLI
+brew "git"
+brew "gh"
+brew "curl"
+brew "wget"
+brew "tree"
+brew "jq"
+brew "yq"
+brew "ripgrep"
+brew "fd"
+brew "bat"
+brew "htop"
+brew "watch"
+brew "coreutils"
+
+# Shell / prompt
+brew "zsh"
+brew "starship"
+brew "fzf"
+
+# Optional quality-of-life
+brew "zoxide"
+
+# Fonts
+cask "font-jetbrains-mono"

@@ -1,0 +1,25 @@
+
+
+# Brewfile.go
+# Go tooling (non-runtime)
+#
+# Philosophy:
+# - Prefer Go version pinning via asdf in go/SETUP.md
+# - Put Go *tooling* here: debugger, linters, protobuf/grpc tools
+
+tap "homebrew/bundle"
+
+# Protobuf / gRPC tooling (common in Go infra repos)
+brew "protobuf"     # protoc compiler
+brew "buf"          # protobuf lint/build tooling
+brew "grpcurl"      # gRPC debugging
+
+# Go developer tooling
+brew "delve"        # dlv debugger
+brew "golangci-lint" # fast multi-linter
+
+# Optional
+# brew "go"          # Only if you want Homebrew Go instead of asdf
+# brew "gofumpt"     # Stricter gofmt (can also be installed via 'go install')
+# brew "mockery"     # Mocks generator (often installed via 'go install')
+# brew "k6"          # Load testing (handy for services)

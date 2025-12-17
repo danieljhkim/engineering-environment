@@ -1,0 +1,22 @@
+# Brewfile.data-eng
+# Data engineering tooling (local development & debugging)
+
+tap "homebrew/bundle"
+
+# Spark / batch processing
+brew "apache-spark"
+
+# Local analytics / SQL
+brew "duckdb"
+
+# File format inspection
+brew "parquet-tools"
+
+# Streaming / Kafka tooling
+brew "kcat"
+
+# Optional / heavier tools (install only if needed)
+# brew "hadoop"
+# brew "hive"
+# brew "kafka"
+# brew "trino"

@@ -1,0 +1,24 @@
+# Brewfile.nodejs
+# Node.js tooling (non-runtime)
+#
+# Philosophy:
+# - Prefer Node version pinning via asdf in nodejs/SETUP.md
+# - Put Node *tooling* here: package managers, helpers, common dev CLIs
+
+tap "homebrew/bundle"
+
+# Package managers
+brew "pnpm"
+brew "yarn"
+
+# Useful CLIs for JS/TS repos
+brew "jq"          # JSON inspection (also in core; safe if duplicated)
+brew "watchman"    # File watcher (helps with large monorepos)
+
+# Optional
+# brew "node"       # Only if you want Homebrew Node instead of asdf
+# brew "typescript" # tsc CLI (often installed per-project)
+# brew "deno"       # Alternative runtime
+
+# Optional quality-of-life
+# brew "bun"        # Alt runtime + bundler (if you use it)

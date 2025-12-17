@@ -1,0 +1,27 @@
+# Brewfile.infra
+# Infrastructure / platform tooling
+
+tap "homebrew/bundle"
+
+# Cloud CLIs
+brew "awscli"
+brew "google-cloud-sdk"
+# Optional:
+# brew "azure-cli"
+
+# Containers / Kubernetes
+brew "docker"
+brew "kubectl"
+brew "kubernetes-helm"
+brew "k9s"
+
+# Networking
+brew "httpie"
+brew "netcat"
+
+# IaC
+brew "terraform"
+
+# Optional secrets tooling
+# cask "1password"
+# brew "1password-cli"

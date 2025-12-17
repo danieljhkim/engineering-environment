@@ -1,0 +1,28 @@
+# Brewfile.python
+# Python tooling (non-runtime)
+#
+# Philosophy:
+# - Prefer Python version management in python/SETUP.md (asdf/pyenv)
+# - Put Python *tooling* here: environment managers, formatting/lint helpers, build deps
+
+tap "homebrew/bundle"
+
+# Python environment helpers
+brew "pipx"        # install Python CLIs in isolated venvs
+brew "uv"          # fast Python package manager / venv tool
+
+# Common native deps (often needed for wheels)
+brew "openssl@3"
+brew "readline"
+brew "sqlite"
+brew "xz"
+
+# Optional
+# brew "python@3.12" # Only if you want Homebrew Python instead of asdf/pyenv
+
+# Helpful CLIs installed via pipx (recommended)
+#   pipx install ruff
+#   pipx install black
+#   pipx install mypy
+#   pipx install poetry
+#   pipx install pre-commit
