@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+# node-cleanup - Find and remove node_modules directories
+#
+# Examples:
+#   node-cleanup              # Search current directory
+#   node-cleanup ~/projects   # Search specific path
+#   node-cleanup --dry-run    # Show what would be deleted
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [PATH] [OPTIONS]
+
+Find and remove node_modules directories recursively.
+
+Arguments:
+  path    Directory to search (default: current directory)
+
+Options:
+  -n, --dry-run    Show what would be deleted without deleting
+  -h, --help       Show this help
+
+Examples:
+  $(basename "$0")              # Clean current directory
+  $(basename "$0") ~/projects   # Clean specific directory
+  $(basename "$0") . --dry-run  # Preview deletions
+EOF
+}
+
+SEARCH_PATH="."
+DRY_RUN=false
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+    case $1 in
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        -n|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        *)
+            if [ -d "$1" ]; then
+                SEARCH_PATH="$1"
+            else
+                echo "Error: Directory not found: $1" >&2
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+echo "${YELLOW}Searching for node_modules directories in: $SEARCH_PATH${NC}"
+echo ""
+
+# Find all node_modules directories
+NODE_MODULES_DIRS=$(find "$SEARCH_PATH" -type d -name "node_modules" 2>/dev/null || true)
+
+if [ -z "$NODE_MODULES_DIRS" ]; then
+    echo "${GREEN}No node_modules directories found${NC}"
+    exit 0
+fi
+
+# Calculate total size
+echo "Found node_modules directories:"
+TOTAL_SIZE=0
+while IFS= read -r dir; do
+    SIZE=$(du -sh "$dir" 2>/dev/null | cut -f1)
+    SIZE_KB=$(du -sk "$dir" 2>/dev/null | cut -f1)
+    TOTAL_SIZE=$((TOTAL_SIZE + SIZE_KB))
+    echo "  $SIZE  $dir"
+done <<< "$NODE_MODULES_DIRS"
+
+TOTAL_SIZE_MB=$((TOTAL_SIZE / 1024))
+echo ""
+echo "Total size: ${YELLOW}${TOTAL_SIZE_MB}MB${NC}"
+echo ""
+
+COUNT=$(echo "$NODE_MODULES_DIRS" | wc -l | tr -d ' ')
+
+if $DRY_RUN; then
+    echo "${YELLOW}[DRY RUN] Would delete $COUNT node_modules directories${NC}"
+    exit 0
+fi
+
+read -p "Delete $COUNT node_modules directories? (y/N) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Cancelled"
+    exit 0
+fi
+
+echo ""
+echo "Deleting..."
+
+DELETED=0
+FAILED=0
+
+while IFS= read -r dir; do
+    if rm -rf "$dir" 2>/dev/null; then
+        echo "${GREEN}✓${NC} $dir"
+        ((DELETED++))
+    else
+        echo "${RED}✗${NC} $dir"
+        ((FAILED++))
+    fi
+done <<< "$NODE_MODULES_DIRS"
+
+echo ""
+echo "${GREEN}Deleted: $DELETED${NC}"
+if [ $FAILED -gt 0 ]; then
+    echo "${RED}Failed: $FAILED${NC}"
+fi
+echo "${GREEN}Freed: ${TOTAL_SIZE_MB}MB${NC}"

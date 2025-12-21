@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# recent-files - Show recently modified files
+#
+# Examples:
+#   recent-files           # Show last 20 files
+#   recent-files 50        # Show last 50 files
+#   recent-files 30 "*.py" # Show last 30 Python files
+
+set -euo pipefail
+
+# Colors
+YELLOW='\033[0;33m'
+GRAY='\033[0;90m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [N] [pattern]
+
+Show recently modified files.
+
+Arguments:
+  N         Number of files to show (default: 20)
+  pattern   File pattern (e.g., "*.py", "*.js") (default: all files)
+
+Examples:
+  $(basename "$0")              # Last 20 files
+  $(basename "$0") 50           # Last 50 files
+  $(basename "$0") 30 "*.py"    # Last 30 Python files
+  $(basename "$0") 10 "*.md"    # Last 10 Markdown files
+EOF
+}
+
+N=20
+PATTERN="*"
+
+# Parse arguments
+if [ $# -gt 0 ]; then
+    if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+        show_usage
+        exit 0
+    fi
+    
+    if [[ "$1" =~ ^[0-9]+$ ]]; then
+        N=$1
+        shift
+    fi
+fi
+
+if [ $# -gt 0 ]; then
+    PATTERN="$1"
+fi
+
+echo "${YELLOW}Recently modified files (last $N):${NC}"
+if [ "$PATTERN" != "*" ]; then
+    echo "${GRAY}Pattern: $PATTERN${NC}"
+fi
+echo ""
+
+# Find and sort by modification time
+find . -type f -name "$PATTERN" -not -path "*/.git/*" 2>/dev/null | \
+    xargs stat -f "%m %N" 2>/dev/null | \
+    sort -rn | \
+    head -n "$N" | \
+    while read -r timestamp file; do
+        # Format timestamp
+        time_str=$(date -r "$timestamp" "+%Y-%m-%d %H:%M:%S")
+        printf "%s  %s\n" "$time_str" "$file"
+    done

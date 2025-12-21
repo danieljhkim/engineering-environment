@@ -1,6 +1,6 @@
 
 
-# Brewfile.java
+# languages/java/Brewfile
 # Java tooling (non-runtime)
 #
 # Philosophy:

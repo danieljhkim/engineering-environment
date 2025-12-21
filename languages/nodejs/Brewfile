@@ -1,4 +1,4 @@
-# Brewfile.nodejs
+# languages/nodejs/Brewfile
 # Node.js tooling (non-runtime)
 #
 # Philosophy:

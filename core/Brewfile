@@ -1,4 +1,4 @@
-# Brewfile.core
+# core/Brewfile
 # Baseline developer utilities (language-agnostic)
 
 tap "homebrew/bundle"
@@ -23,6 +23,7 @@ brew "coreutils"
 brew "zsh"
 brew "starship"
 brew "fzf"
+brew "tmux"
 
 # Optional quality-of-life
 brew "zoxide"

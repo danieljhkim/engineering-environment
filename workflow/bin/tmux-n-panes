@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Create N panes in a single tmux window (tiled).
+# Works whether you are inside tmux or not.
+#
+# Examples:
+#   tmux-n-panes 4    # Create 4 panes in a tiled layout
+#   tmux-n-panes 6    # Create 6 panes in a tiled layout
+#
+# Environment variables:
+#   TMUX_SESSION - Session name when creating from outside tmux (default: panes)
+#   TMUX_WINDOW  - Window name when creating from outside tmux (default: main)
+
+set -euo pipefail
+
+if [ $# -ne 1 ]; then
+  echo "Usage: $0 <num_panes>"
+  exit 1
+fi
+
+NUM="$1"
+if ! [[ "$NUM" =~ ^[0-9]+$ ]] || [ "$NUM" -le 0 ]; then
+  echo "Error: num_panes must be a positive integer" >&2
+  exit 1
+fi
+
+SESSION="${TMUX_SESSION:-panes}"
+WINDOW="${TMUX_WINDOW:-main}"
+
+# Determine where to create panes:
+# - If inside tmux: use current session/window
+# - If not: create (or reuse) a session/window and attach at end
+ATTACH_AT_END=0
+
+if [ -n "${TMUX:-}" ]; then
+  # Inside tmux: use current target
+  TARGET="$(tmux display-message -p '#S:#I')"
+else
+  # Outside tmux: create/reuse a session and a named window
+  if tmux has-session -t "$SESSION" 2>/dev/null; then
+    :
+  else
+    tmux new-session -d -s "$SESSION" -n "$WINDOW"
+  fi
+
+  # Ensure window exists (create if missing)
+  if ! tmux list-windows -t "$SESSION" -F '#W' | grep -qx "$WINDOW"; then
+    tmux new-window -t "$SESSION" -n "$WINDOW"
+  fi
+
+  TARGET="$SESSION:$WINDOW"
+  ATTACH_AT_END=1
+fi
+
+# Count existing panes in the target window
+CURRENT_PANES="$(tmux list-panes -t "$TARGET" 2>/dev/null | wc -l | tr -d ' ')"
+
+# Create additional panes until we reach NUM
+if [ "$CURRENT_PANES" -lt "$NUM" ]; then
+  for _ in $(seq 1 $((NUM - CURRENT_PANES))); do
+    tmux split-window -t "$TARGET" -h
+    tmux select-layout -t "$TARGET" tiled
+  done
+else
+  # If there are already >= NUM panes, just re-tile (optional)
+  tmux select-layout -t "$TARGET" tiled
+fi
+
+# Attach if we started tmux ourselves
+if [ "$ATTACH_AT_END" -eq 1 ]; then
+  tmux attach -t "$SESSION"
+fi

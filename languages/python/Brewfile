@@ -1,4 +1,4 @@
-# Brewfile.python
+# languages/python/Brewfile
 # Python tooling (non-runtime)
 #
 # Philosophy:

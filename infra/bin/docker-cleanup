@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# docker-cleanup - Clean up Docker resources
+#
+# Examples:
+#   docker-cleanup              # Standard cleanup
+#   docker-cleanup --aggressive # Remove everything unused
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Clean up Docker resources.
+
+Options:
+  -a, --aggressive    Remove all unused containers, networks, images (not just dangling)
+  -n, --dry-run       Show what would be removed
+  -h, --help          Show this help
+
+Standard cleanup:
+  - Stopped containers
+  - Dangling images
+  - Unused networks
+  - Unused volumes
+
+Aggressive cleanup (adds):
+  - All unused images (not just dangling)
+  - Build cache
+
+Examples:
+  $(basename "$0")              # Standard cleanup
+  $(basename "$0") --aggressive # Remove everything unused
+  $(basename "$0") --dry-run    # Preview only
+EOF
+}
+
+AGGRESSIVE=false
+DRY_RUN=false
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+    case $1 in
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        -a|--aggressive)
+            AGGRESSIVE=true
+            shift
+            ;;
+        -n|--dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            show_usage
+            exit 1
+            ;;
+    esac
+done
+
+# Check if Docker is running
+if ! docker info > /dev/null 2>&1; then
+    echo "${RED}Error: Docker is not running${NC}" >&2
+    exit 1
+fi
+
+echo "${BLUE}Docker Cleanup${NC}"
+echo ""
+
+# Show current usage
+echo "${YELLOW}Current usage:${NC}"
+docker system df
+echo ""
+
+if $DRY_RUN; then
+    echo "${YELLOW}[DRY RUN] Preview of what would be removed:${NC}"
+    echo ""
+    
+    echo "Stopped containers:"
+    docker ps -a --filter "status=exited" --format "{{.ID}} {{.Names}}" || echo "  None"
+    echo ""
+    
+    echo "Dangling images:"
+    docker images -f "dangling=true" --format "{{.ID}} {{.Repository}}" || echo "  None"
+    echo ""
+    
+    if $AGGRESSIVE; then
+        echo "All unused images:"
+        docker images --format "{{.ID}} {{.Repository}}" || echo "  None"
+    fi
+    
+    exit 0
+fi
+
+# Confirm
+if ! $AGGRESSIVE; then
+    MODE="standard"
+else
+    MODE="aggressive"
+fi
+
+read -p "Run $MODE cleanup? (y/N) " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Cancelled"
+    exit 0
+fi
+
+echo ""
+
+# Remove stopped containers
+echo "${YELLOW}Removing stopped containers...${NC}"
+REMOVED=$(docker container prune -f 2>&1 | grep "Total reclaimed space" || echo "None removed")
+echo "  $REMOVED"
+
+# Remove dangling images
+echo "${YELLOW}Removing dangling images...${NC}"
+REMOVED=$(docker image prune -f 2>&1 | grep "Total reclaimed space" || echo "None removed")
+echo "  $REMOVED"
+
+# Remove unused networks
+echo "${YELLOW}Removing unused networks...${NC}"
+docker network prune -f > /dev/null 2>&1 || true
+echo "  Done"
+
+# Remove unused volumes
+echo "${YELLOW}Removing unused volumes...${NC}"
+REMOVED=$(docker volume prune -f 2>&1 | grep "Total reclaimed space" || echo "None removed")
+echo "  $REMOVED"
+
+if $AGGRESSIVE; then
+    # Remove all unused images
+    echo "${YELLOW}Removing all unused images...${NC}"
+    REMOVED=$(docker image prune -a -f 2>&1 | grep "Total reclaimed space" || echo "None removed")
+    echo "  $REMOVED"
+    
+    # Remove build cache
+    echo "${YELLOW}Removing build cache...${NC}"
+    docker builder prune -af > /dev/null 2>&1 || true
+    echo "  Done"
+fi
+
+echo ""
+echo "${GREEN}✓ Cleanup complete${NC}"
+echo ""
+echo "${YELLOW}New usage:${NC}"
+docker system df

@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+GRAY='\033[0;90m'
+NC='\033[0m' # No Color
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS] [NUMBER]
+
+Display PATH entries in a numbered list.
+
+Arguments:
+  NUMBER              Show only the first N entries (default: all)
+
+Options:
+  -h, --help         Show this help message
+  -e, --exists-only  Show only directories that exist
+  -m, --missing      Show only directories that don't exist
+  -d, --duplicates   Highlight duplicate entries
+
+Examples:
+  $(basename "$0")           # Show all PATH entries
+  $(basename "$0") 20        # Show first 20 entries
+  $(basename "$0") -e        # Show only existing directories
+  $(basename "$0") -m        # Show only missing directories
+EOF
+}
+
+exists_only=false
+missing_only=false
+show_duplicates=true  # Default to showing duplicates
+limit=""
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        -e|--exists-only)
+            exists_only=true
+            shift
+            ;;
+        -m|--missing)
+            missing_only=true
+            shift
+            ;;
+        -d|--duplicates)
+            show_duplicates=true
+            shift
+            ;;
+        -*)
+            echo "Unknown option: $1" >&2
+            show_usage >&2
+            exit 1
+            ;;
+        *)
+            if [[ "$1" =~ ^[0-9]+$ ]]; then
+                limit=$1
+            else
+                echo "Error: Argument must be a positive number" >&2
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Store all paths with line numbers for duplicate detection
+all_paths=$(echo "$PATH" | tr ':' '\n')
+
+counter=0
+while IFS= read -r path; do
+    counter=$((counter + 1))
+    
+    # Check if directory exists
+    if [ -d "$path" ]; then
+        exists=true
+        color=$GREEN
+    else
+        exists=false
+        color=$RED
+    fi
+    
+    # Apply filters
+    if $exists_only && ! $exists; then
+        continue
+    fi
+    
+    if $missing_only && $exists; then
+        continue
+    fi
+    
+    # Check for duplicates
+    duplicate=""
+    if $show_duplicates; then
+        # Find first occurrence of this path
+        first_occurrence=$(echo "$all_paths" | grep -n -F -x "$path" | head -1 | cut -d: -f1)
+        if [ "$first_occurrence" != "$counter" ]; then
+            duplicate=" ${YELLOW}(duplicate of #${first_occurrence})${NC}"
+        fi
+    fi
+    
+    # Print the entry
+    printf "${GRAY}%3d${NC}  ${color}%s${NC}%s\n" "$counter" "$path" "$duplicate"
+    
+    # Stop if we've reached the limit
+    if [ -n "$limit" ] && [ "$counter" -ge "$limit" ]; then
+        break
+    fi
+done <<< "$all_paths"

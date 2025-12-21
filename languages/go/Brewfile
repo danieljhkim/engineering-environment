@@ -1,6 +1,6 @@
 
 
-# Brewfile.go
+# languages/go/Brewfile
 # Go tooling (non-runtime)
 #
 # Philosophy:

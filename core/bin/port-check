@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# port-check - Find what's using a port and optionally kill it
+#
+# Examples:
+#   port-check 8080           # Show what's using port 8080
+#   port-check 3000 --kill    # Kill process using port 3000
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") <port> [--kill]
+
+Find what process is using a port.
+
+Arguments:
+  port       Port number to check
+
+Options:
+  -k, --kill    Kill the process using the port
+  -h, --help    Show this help
+
+Examples:
+  $(basename "$0") 8080        # Show what's using port 8080
+  $(basename "$0") 3000 -k     # Kill process on port 3000
+EOF
+}
+
+if [ $# -eq 0 ]; then
+    show_usage
+    exit 1
+fi
+
+PORT=""
+KILL=false
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+    case $1 in
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        -k|--kill)
+            KILL=true
+            shift
+            ;;
+        *)
+            if [[ "$1" =~ ^[0-9]+$ ]]; then
+                PORT=$1
+            else
+                echo "${RED}Error: Invalid port number${NC}" >&2
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$PORT" ]; then
+    echo "${RED}Error: Port number required${NC}" >&2
+    show_usage
+    exit 1
+fi
+
+# Find process using the port
+PID=$(lsof -ti ":$PORT" 2>/dev/null || true)
+
+if [ -z "$PID" ]; then
+    echo "${GREEN}Port $PORT is not in use${NC}"
+    exit 0
+fi
+
+echo "${YELLOW}Port $PORT is in use:${NC}"
+echo ""
+
+# Show process details
+lsof -i ":$PORT" | grep -v COMMAND | while IFS= read -r line; do
+    echo "  $line"
+done
+
+echo ""
+
+if $KILL; then
+    echo "${YELLOW}Killing process(es): $PID${NC}"
+    kill -9 $PID 2>/dev/null || {
+        echo "${RED}Failed to kill process. Try with sudo?${NC}" >&2
+        exit 1
+    }
+    echo "${GREEN}✓ Process killed${NC}"
+else
+    echo "To kill this process, run:"
+    echo "  $(basename "$0") $PORT --kill"
+    echo "Or manually:"
+    echo "  kill -9 $PID"
+fi

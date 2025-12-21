@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# tmux-n-windows
+# Create (or reuse) ONE tmux session with N windows.
+# Optional: pass a command template that receives the window index as $1.
+#
+# Examples:
+#   tmux-n-windows cluster 4
+#     - Creates session 'cluster' with 4 windows (w1, w2, w3, w4)
+#
+#   tmux-n-windows dsearch 5 "./run_index_node.sh"
+#     - Creates session 'dsearch' with 5 windows
+#     - Runs './run_index_node.sh' in each window
+#
+#   tmux-n-windows hosts 3 "ssh user@host-\$1"
+#     - Creates session 'hosts' with 3 windows
+#     - Window 1 runs: ssh user@host-1
+#     - Window 2 runs: ssh user@host-2
+#     - Window 3 runs: ssh user@host-3
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  tmux-n-windows.sh <session_name> <num_windows> [command_template]
+
+Examples:
+  tmux-n-windows.sh cluster 4
+  tmux-n-windows.sh dsearch 5 "./run_index_node.sh"
+  tmux-n-windows.sh hosts 3 "ssh user@host-$1"
+EOF
+}
+
+if [ $# -lt 2 ]; then usage; exit 1; fi
+
+SESSION="$1"
+NUM="$2"
+shift 2
+CMD_TEMPLATE="${*:-}"
+
+if ! [[ "$NUM" =~ ^[0-9]+$ ]] || [ "$NUM" -le 0 ]; then
+  echo "Error: <num_windows> must be a positive integer" >&2
+  exit 1
+fi
+
+# Create or reuse the session
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+  echo "Using existing session: $SESSION"
+else
+  tmux new-session -d -s "$SESSION" -n "w1"
+  echo "Created session: $SESSION"
+fi
+
+# Ensure window 1 exists and is named consistently
+tmux rename-window -t "$SESSION:1" "w1" 2>/dev/null || true
+
+# Helper: run optional command in a specific window
+run_cmd_in_window() {
+  local idx="$1"
+  local target="$SESSION:$idx"
+  [ -z "$CMD_TEMPLATE" ] && return 0
+
+  # Expand $1 in the template safely-ish (simple eval for template substitution).
+  # Example template: "ssh user@host-$1"
+  local cmd
+  cmd=$(eval "echo \"$CMD_TEMPLATE\"")
+
+  tmux send-keys -t "$target" C-c 2>/dev/null || true
+  tmux send-keys -t "$target" "$cmd" Enter
+}
+
+# Create windows 2..N (window 1 already exists)
+for i in $(seq 2 "$NUM"); do
+  if tmux list-windows -t "$SESSION" -F '#I' | grep -qx "$i"; then
+    echo "Skipping existing window: $SESSION:$i"
+  else
+    tmux new-window -t "$SESSION" -n "w$i"
+    echo "Created window: $SESSION:$i (w$i)"
+  fi
+done
+
+# Optionally run a command in each window (1..N)
+for i in $(seq 1 "$NUM"); do
+  run_cmd_in_window "$i"
+done
+
+# Attach (or switch client) to the session
+if [ -n "${TMUX:-}" ]; then
+  tmux switch-client -t "$SESSION"
+else
+  tmux attach -t "$SESSION"
+fi

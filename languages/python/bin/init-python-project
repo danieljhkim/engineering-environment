@@ -1,0 +1,422 @@
+#!/usr/bin/env bash
+# init-python-project - Create complete Python project with tests and CI
+#
+# Examples:
+#   init-python-project myapp       # Create Python app
+#   init-python-project mylib --lib # Create Python library
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") <name> [--lib]
+
+Create a complete Python project with modern tooling.
+
+Arguments:
+  name    Project name (directory will be created)
+
+Options:
+  --lib   Create as a library (adds pyproject.toml for packaging)
+  -h      Show this help
+
+Creates:
+  - src/ directory with package structure
+  - tests/ with pytest setup
+  - pyproject.toml with ruff, pytest config
+  - .gitignore
+  - README.md
+  - Optional: GitHub Actions CI
+
+Examples:
+  $(basename "$0") myapp           # Application project
+  $(basename "$0") mylib --lib     # Library project
+EOF
+}
+
+if [ $# -eq 0 ]; then
+    show_usage
+    exit 1
+fi
+
+NAME=""
+IS_LIB=false
+
+# Parse arguments
+while [ $# -gt 0 ]; do
+    case $1 in
+        -h|--help)
+            show_usage
+            exit 0
+            ;;
+        --lib)
+            IS_LIB=true
+            shift
+            ;;
+        *)
+            if [ -z "$NAME" ]; then
+                NAME="$1"
+            else
+                echo "Error: Unknown argument: $1" >&2
+                exit 1
+            fi
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$NAME" ]; then
+    echo "Error: Project name required" >&2
+    show_usage
+    exit 1
+fi
+
+# Validate name (should be valid Python package name)
+if ! [[ "$NAME" =~ ^[a-z][a-z0-9_]*$ ]]; then
+    echo "Error: Invalid project name. Use lowercase letters, numbers, and underscores only." >&2
+    echo "Example: myapp, my_project, mylib2" >&2
+    exit 1
+fi
+
+if [ -d "$NAME" ]; then
+    echo "Error: Directory already exists: $NAME" >&2
+    exit 1
+fi
+
+echo "${BLUE}Creating Python project: $NAME${NC}"
+if $IS_LIB; then
+    echo "${YELLOW}Type: Library${NC}"
+else
+    echo "${YELLOW}Type: Application${NC}"
+fi
+echo ""
+
+# Create directory structure
+mkdir -p "$NAME"
+cd "$NAME"
+
+mkdir -p "src/$NAME"
+mkdir -p "tests"
+mkdir -p ".github/workflows"
+
+# Create src/__init__.py
+cat > "src/$NAME/__init__.py" << EOF
+"""$NAME - A Python project."""
+
+__version__ = "0.1.0"
+EOF
+
+# Create main module
+cat > "src/$NAME/main.py" << 'EOF'
+"""Main module."""
+
+
+def main() -> None:
+    """Entry point for the application."""
+    print("Hello from $NAME!")
+
+
+if __name__ == "__main__":
+    main()
+EOF
+sed -i '' "s/\$NAME/$NAME/g" "src/$NAME/main.py"
+
+# Create tests
+cat > "tests/__init__.py" << EOF
+"""Tests for $NAME."""
+EOF
+
+cat > "tests/test_main.py" << EOF
+"""Tests for main module."""
+
+from ${NAME}.main import main
+
+
+def test_main(capsys):
+    """Test main function."""
+    main()
+    captured = capsys.readouterr()
+    assert "Hello" in captured.out
+EOF
+
+cat > "tests/conftest.py" << 'EOF'
+"""Pytest configuration."""
+
+import sys
+from pathlib import Path
+
+# Add src to path
+src_path = Path(__file__).parent.parent / "src"
+sys.path.insert(0, str(src_path))
+EOF
+
+# Create pyproject.toml
+if $IS_LIB; then
+    cat > "pyproject.toml" << EOF
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "$NAME"
+version = "0.1.0"
+description = "A Python library"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Your Name", email = "your.email@example.com" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+$NAME = "${NAME}.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--cov=${NAME}",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+EOF
+else
+    cat > "pyproject.toml" << EOF
+[project]
+name = "$NAME"
+version = "0.1.0"
+description = "A Python application"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--cov=${NAME}",
+    "--cov-report=term-missing",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+EOF
+fi
+
+# Create requirements files
+cat > "requirements.txt" << EOF
+# Production dependencies
+EOF
+
+cat > "requirements-dev.txt" << EOF
+# Development dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+ruff>=0.1.0
+EOF
+
+# Create .gitignore
+cat > ".gitignore" << 'EOF'
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# macOS
+.DS_Store
+EOF
+
+# Create README
+cat > "README.md" << EOF
+# $NAME
+
+[![Tests](https://github.com/USER/$NAME/workflows/Tests/badge.svg)](https://github.com/USER/$NAME/actions)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
+## Setup
+
+\`\`\`bash
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements-dev.txt
+EOF
+
+if $IS_LIB; then
+    cat >> "README.md" << 'EOF'
+
+# Install package in editable mode
+pip install -e .
+EOF
+fi
+
+cat >> "README.md" << 'EOF'
+```
+
+## Development
+
+```bash
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov
+
+# Format code
+ruff format .
+
+# Lint code
+ruff check .
+
+# Fix linting issues
+ruff check . --fix
+```
+
+## Usage
+
+```python
+from $NAME.main import main
+
+main()
+```
+EOF
+sed -i '' "s/\$NAME/$NAME/g" "README.md"
+
+# Create GitHub Actions CI
+cat > ".github/workflows/tests.yml" << EOF
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python \${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: \${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements-dev.txt
+EOF
+
+if $IS_LIB; then
+    cat >> ".github/workflows/tests.yml" << 'EOF'
+        pip install -e .
+EOF
+fi
+
+cat >> ".github/workflows/tests.yml" << 'EOF'
+    
+    - name: Lint with ruff
+      run: |
+        ruff check .
+    
+    - name: Run tests
+      run: |
+        pytest --cov
+EOF
+
+echo "${GREEN}✓ Project structure created${NC}"
+echo ""
+echo "Created files:"
+echo "  src/$NAME/          - Source code"
+echo "  tests/              - Tests"
+echo "  pyproject.toml      - Project configuration"
+echo "  requirements*.txt   - Dependencies"
+echo "  .github/workflows/  - GitHub Actions CI"
+echo ""
+echo "${YELLOW}Next steps:${NC}"
+echo "  cd $NAME"
+echo "  venv-create"
+echo "  source .venv/bin/activate"
+echo "  pip install -r requirements-dev.txt"
+if $IS_LIB; then
+    echo "  pip install -e ."
+fi
+echo "  pytest"

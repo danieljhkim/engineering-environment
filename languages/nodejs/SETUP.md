@@ -11,50 +11,7 @@ This guide defines a **clean, reproducible Node.js toolchain** for macOS, optimi
 
 ---
 
-## 1) Install prerequisites
-
-Install core tooling via Homebrew:
-
-```bash
-brew install asdf direnv
-```
-
-Install Node tooling:
-
-```bash
-brew install node
-```
-
-> `node` from Homebrew is fine for quick scripts, but **asdf-managed Node is authoritative** for development projects.
-
----
-
-## 2) Install Node via asdf (recommended)
-
-Add the Node.js plugin:
-
-```bash
-asdf plugin add nodejs
-```
-
-Install a Node version:
-
-```bash
-asdf install nodejs 22.11.0
-asdf global nodejs 22.11.0
-```
-
-Verify:
-
-```bash
-node -v
-npm -v
-asdf current nodejs
-```
-
----
-
-## 3) Package manager: pnpm (recommended)
+## Package manager: pnpm (recommended)
 
 Install pnpm via Corepack (preferred):
 
@@ -72,7 +29,7 @@ pnpm -v
 
 ---
 
-## 4) Repo setup: pin Node version
+## Repo setup: pin Node version
 
 Inside a project repo:
 
@@ -89,7 +46,7 @@ nodejs 22.11.0
 
 ---
 
-## 5) Big-repo performance defaults
+## Big-repo performance defaults
 
 Avoid watcher explosions and slow searches by excluding:
 
@@ -135,7 +92,7 @@ Recommended VS Code repo-local settings (`.vscode/settings.json`):
 
 ---
 
-## 6) Optional: per-repo environment with `direnv`
+## Optional: per-repo environment with `direnv`
 
 Useful for projects with many env vars (API keys, DB urls, feature flags).
 
@@ -179,23 +136,3 @@ pnpm build
 ```bash
 pnpm test
 ```
-
----
-
-## 8) Notes & philosophy
-
-- Node is intentionally **managed via asdf**, not Homebrew
-- `corepack + pnpm` gives reproducible installs without extra global tooling
-- Repo-local `.tool-versions` keeps CI + local aligned
-
----
-
-## Quick checklist
-
-```bash
-node -v
-pnpm -v
-asdf current nodejs
-```
-
-

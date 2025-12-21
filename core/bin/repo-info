@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# repo-info - Show repository diagnostics and statistics
+#
+# Examples:
+#   repo-info              # Show info for current repo
+#   repo-info ~/projects/myrepo
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
+GRAY='\033[0;90m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [path]
+
+Show repository diagnostics and statistics.
+
+Arguments:
+  path    Path to repository (default: current directory)
+
+Examples:
+  $(basename "$0")              # Current repo
+  $(basename "$0") ~/code/app   # Specific repo
+EOF
+}
+
+REPO_PATH="${1:-.}"
+
+if [ "$REPO_PATH" = "-h" ] || [ "$REPO_PATH" = "--help" ]; then
+    show_usage
+    exit 0
+fi
+
+if [ ! -d "$REPO_PATH" ]; then
+    echo "Error: Directory not found: $REPO_PATH" >&2
+    exit 1
+fi
+
+cd "$REPO_PATH"
+
+if [ ! -d .git ]; then
+    echo "Error: Not a git repository: $REPO_PATH" >&2
+    exit 1
+fi
+
+echo "${BLUE}Repository Information${NC}"
+echo ""
+
+# Repository path
+echo "${YELLOW}Location:${NC}"
+echo "  $(pwd)"
+echo ""
+
+# Git info
+echo "${YELLOW}Git:${NC}"
+REMOTE=$(git remote get-url origin 2>/dev/null || echo "No remote")
+BRANCH=$(git branch --show-current 2>/dev/null || echo "detached HEAD")
+COMMITS=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+echo "  Remote:  $REMOTE"
+echo "  Branch:  $BRANCH"
+echo "  Commits: $COMMITS"
+echo ""
+
+# Repository size
+echo "${YELLOW}Size:${NC}"
+TOTAL_SIZE=$(du -sh . 2>/dev/null | cut -f1)
+GIT_SIZE=$(du -sh .git 2>/dev/null | cut -f1)
+echo "  Total:     $TOTAL_SIZE"
+echo "  .git:      $GIT_SIZE"
+echo ""
+
+# Largest files
+echo "${YELLOW}Largest files (top 10):${NC}"
+find . -type f -not -path './.git/*' -exec du -h {} + 2>/dev/null | \
+    sort -rh | head -10 | while read -r size file; do
+    printf "  %-10s %s\n" "$size" "$file"
+done
+echo ""
+
+# File counts by extension
+echo "${YELLOW}File types:${NC}"
+find . -type f -not -path './.git/*' -name "*.*" 2>/dev/null | \
+    sed 's/.*\.//' | sort | uniq -c | sort -rn | head -10 | \
+    while read -r count ext; do
+        printf "  %-6s .%s\n" "$count" "$ext"
+    done
+echo ""
+
+# Git status summary
+if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+    echo "${YELLOW}Working tree:${NC}"
+    MODIFIED=$(git status --porcelain | grep -c "^ M" || echo "0")
+    UNTRACKED=$(git status --porcelain | grep -c "^??" || echo "0")
+    STAGED=$(git status --porcelain | grep -c "^M" || echo "0")
+    echo "  Modified:   $MODIFIED"
+    echo "  Untracked:  $UNTRACKED"
+    echo "  Staged:     $STAGED"
+else
+    echo "${GREEN}✓ Working tree clean${NC}"
+fi

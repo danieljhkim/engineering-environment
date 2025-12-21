@@ -1,4 +1,4 @@
-# Brewfile.data-eng
+# data-eng/Brewfile
 # Data engineering tooling (local development & debugging)
 
 tap "homebrew/bundle"
@@ -16,7 +16,7 @@ brew "parquet-tools"
 brew "kcat"
 
 # Optional / heavier tools (install only if needed)
-# brew "hadoop"
-# brew "hive"
-# brew "kafka"
-# brew "trino"
+brew "hadoop"
+brew "hive"
+brew "kafka"
+brew "trino"

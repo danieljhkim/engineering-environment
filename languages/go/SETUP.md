@@ -175,14 +175,3 @@ golang 1.23.4
 - Global installs are kept minimal
 - Repo-local version pinning is preferred for long-lived services
 
----
-
-## Quick checklist
-
-```bash
-go version
-go env GOPATH GOBIN
-gopls version
-```
-
-

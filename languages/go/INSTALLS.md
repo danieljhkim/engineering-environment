@@ -23,7 +23,7 @@ brew install go
 ```bash
 asdf plugin add golang
 asdf install golang 1.23.4
-asdf global golang 1.23.4
+asdf set -u golang 1.23.4
 ```
 
 ---

@@ -1,30 +1,37 @@
 # engineering-environment
 
-A reference engineering environment for modern infra & backend work.
+Every time we get a new computer, whether for work or personal, it takes way too much time setting things up. Tools come and go, and it's time-consuming to keep up with the trend. 
+
+To make things easier, I created **engineering-environment**:
+- A reference engineering environment for modern infra & backend work.
 
 This repo documents:
 - What to install
 - Why each tool exists
-- How layers build on top of each other
-
-The goal is **a predictable, performant engineering environment with low cognitive load**.
+- Boostrap installs 
+- Useful tools and scripts
 
 ---
+
 
 ## 📐 Repo Structure
 
 ```text
-engineering-environment/
-├── SETUP.md        # Core, language-agnostic developer utilities
-├── INSTALLS.md
-├── infra/          # Cloud, platform, ops tooling
-│   ├── SETUP.md
-│   ├── INSTALLS.md
-│   └── DAILY_USAGE.md
-├── java/           # Java-specific setup
-├── go/             # Go-specific setup
-├── nodejs/         # Node.js setup
-├── python/         # Python setup
+dev-setup/
+├── Makefile                      # Bootstrap & verification commands
+├── README.md
+├── bin/                          # Repo-level utilities
+├── core/                         # Core developer utilities
+├── infra/                        # Cloud, platform, ops tooling
+├── data-eng/                     # Data engineering tooling
+├── workflow/                     # Daily workflow helpers
+├── languages/                    # Language-specific setups
+│   ├── java/
+│   ├── go/
+│   ├── nodejs/
+│   └── python/
+├── knowledge-system/
+└── docs/                          # Misc docs
 ```
 
 ---
@@ -32,27 +39,30 @@ engineering-environment/
 ## 🧱 Layering Model
 
 1. **Core** – shell, search, git, prompt
+2. **Workflow** - opinionated daily dev ergonomics
+3. **knowledge-system** - personal/team knowledge tooling
 2. **Infra** – cloud, containers, orchestration
-3. **Language** – runtime + tooling
-4. **Project** – repo-local config
+3. **Data-Eng** - data engineering
+4. **Language** – runtime + tooling
 
-Each layer:
-- Depends only on layers below it
-- Avoids duplication
-- Has a clear responsibility
+---
+
+## Tool Choices
+
+### asdf
+
+I chose **asdf** as the main version manager, since it can be used for many languages.
+And we all speak multiple languages. So asdf makes sense. 
+
+You can check it out here:
+- https://github.com/asdf-vm/asdf
+
 
 ---
 
 ## 🛠️ Makefile (Bootstrap & Verification)
 
-This repo includes a top-level `Makefile` that provides **explicit, layer-aware bootstrap commands**.
-
-The Makefile is intentionally simple:
-- No hidden installs
-- No runtime version pinning
-- No side effects beyond Homebrew bundles
-
-### Common commands
+Make commands:
 
 ```bash
 make help
@@ -65,10 +75,6 @@ make bootstrap-python
 make bootstrap-data-eng
 ```
 
-Each `bootstrap-*` target:
-- Installs tooling for a single layer via the corresponding `Brewfile`
-- Leaves runtime version management to each language’s `SETUP.md`
-
 Verification helpers are also provided:
 
 ```bash
@@ -78,33 +84,3 @@ make verify-data-eng
 ```
 
 These are best-effort checks to confirm tools are installed and reachable.
-
----
-
-## 🎯 Design Principles
-
-- CLI-first
-- Minimal background CPU
-- Big-repo safe defaults
-- Reproducible installs
-- Easy to audit and rebuild
-
----
-
-## 🚀 How to Use
-
-1. Start with `SETUP.md` + `INSTALLS.md`
-2. Add `infra/` if doing platform or cloud work
-3. Add only the language directories you need
-4. Keep project-specific config out of this repo (this repo defines the environment, not individual projects)
-
----
-
-## 📌 Non-Goals
-
-- One-click bootstrap scripts
-- IDE-specific setup
-- OS-level hardening
-
-
-

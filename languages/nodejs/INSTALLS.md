@@ -28,7 +28,7 @@ brew install node
 ```bash
 asdf plugin add nodejs
 asdf install nodejs 22.11.0
-asdf global nodejs 22.11.0
+asdf set -u nodejs 22.11.0
 ```
 
 ---

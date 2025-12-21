@@ -7,21 +7,6 @@ This document defines **data engineering tooling** for macOS, aimed at:
 - Streaming pipelines (Kafka)
 - Warehousing + orchestration (dbt / Airflow)
 
-It **builds on**:
-- `../SETUP.md` + `../INSTALLS.md` (core utilities)
-- `../infra/` (cloud/cluster tooling) when you need AWS/GCP/K8s
-
-It intentionally excludes:
-- Language runtime setup (see `../python/` and `../java/`)
-
----
-
-## Goals
-
-- Fast local iteration for Spark / SQL
-- Reproducible Python environments (no global pip)
-- Clear separation of local tooling vs cluster tooling
-- Big-repo safe defaults (low background CPU)
 
 ---
 
@@ -62,17 +47,16 @@ spark-shell
 
 ## 2) Hadoop & Hive (local dev philosophy)
 
-Local Hadoop/Hive can be useful for:
+Local Hadoop/Hive can be very useful for:
 - Understanding file formats, partitions, and metastore behavior
-- Running small-scale reproductions
+- Running small-scale reproductions and debugging
+- agentic development - since everything is local
 
-But for most modern workflows:
-- Prefer Spark local mode + SQL engines (DuckDB) for fast iteration
-- Use real clusters (EMR/Dataproc) for integration tests
+If your pipeline uses hadoop & hive, I highly recommend you to get this setup locally.
+Once you do, you can run it locally, without deploying to cloud, and make you 2x faster and precise.
 
-If you do run Hadoop locally:
-- Keep it **off** when idle (it’s heavy)
-- Prefer small datasets + minimal daemons
+To make this setup easier, I created **local-data-platform**. You can check it out here:
+- https://github.com/danieljhkim/local-data-platform
 
 ---
 
@@ -91,7 +75,7 @@ Recommended data-eng baseline:
 ```bash
 pip install pyspark pandas pyarrow fastparquet
 pip install duckdb sqlalchemy psycopg2-binary
-pip install dbt-core dbt-postgres
+pipx install dbt-core dbt-postgres
 pip install apache-airflow
 ```
 
@@ -180,17 +164,4 @@ export HADOOP_HOME="$(brew --prefix)/opt/hadoop/libexec"
 export HIVE_HOME="$(brew --prefix)/opt/hive/libexec"
 ```
 
-> Only set `HADOOP_HOME` / `HIVE_HOME` if you actually install those tools locally.
-
 ---
-
-## Quick verification
-
-```bash
-spark-submit --version
-pyspark --version
-python -c "import pyspark; print(pyspark.__version__)"
-duckdb --version
-```
-
-

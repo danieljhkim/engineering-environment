@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# brew-health - Run Homebrew maintenance tasks
+#
+# Examples:
+#   brew-health    # Run all maintenance tasks
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+
+echo "${BLUE}Homebrew Health Check${NC}"
+echo ""
+
+# Show initial disk usage
+echo "${YELLOW}Initial Homebrew cache size:${NC}"
+if [ -d "$(brew --cache)" ]; then
+    INITIAL_SIZE=$(du -sh "$(brew --cache)" 2>/dev/null | cut -f1)
+    echo "  $INITIAL_SIZE"
+else
+    INITIAL_SIZE="0B"
+    echo "  No cache directory"
+fi
+echo ""
+
+# Update Homebrew
+echo "${YELLOW}1. Updating Homebrew...${NC}"
+brew update
+echo ""
+
+# Upgrade packages
+echo "${YELLOW}2. Checking for upgrades...${NC}"
+OUTDATED=$(brew outdated || true)
+if [ -n "$OUTDATED" ]; then
+    echo "Outdated packages:"
+    echo "$OUTDATED"
+    echo ""
+    read -p "Upgrade all packages? (y/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        brew upgrade
+    else
+        echo "Skipped upgrades"
+    fi
+else
+    echo "${GREEN}✓ All packages up to date${NC}"
+fi
+echo ""
+
+# Run doctor
+echo "${YELLOW}3. Running brew doctor...${NC}"
+if brew doctor; then
+    echo "${GREEN}✓ No issues found${NC}"
+else
+    echo "${YELLOW}⚠ Issues detected (see above)${NC}"
+fi
+echo ""
+
+# Cleanup
+echo "${YELLOW}4. Cleaning up old versions...${NC}"
+brew cleanup -s
+echo ""
+
+# Show final disk usage
+echo "${YELLOW}Final Homebrew cache size:${NC}"
+if [ -d "$(brew --cache)" ]; then
+    FINAL_SIZE=$(du -sh "$(brew --cache)" 2>/dev/null | cut -f1)
+    echo "  $FINAL_SIZE"
+else
+    FINAL_SIZE="0B"
+    echo "  No cache directory"
+fi
+echo ""
+
+echo "${GREEN}✓ Homebrew maintenance complete${NC}"
+echo ""
+echo "Summary:"
+echo "  Initial cache: $INITIAL_SIZE"
+echo "  Final cache:   $FINAL_SIZE"

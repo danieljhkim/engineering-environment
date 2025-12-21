@@ -1,4 +1,4 @@
-# Brewfile.infra
+# infra/Brewfile
 # Infrastructure / platform tooling
 
 tap "homebrew/bundle"

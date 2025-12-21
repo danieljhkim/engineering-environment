@@ -2,19 +2,6 @@
 
 This document lists **only the baseline tools** required for a productive developer environment.
 
-It intentionally excludes:
-- Language runtimes
-- Databases, containers, infra
-- Observability stacks
-
----
-
-## 🖥️ Package Manager
-
-### Homebrew
-- **Role:** macOS package manager
-- **Why:** Single, reproducible install surface
-
 ---
 
 ## 🧱 Core CLI Utilities
@@ -73,10 +60,6 @@ brew install zoxide
 brew tap homebrew/cask-fonts
 brew install --cask font-jetbrains-mono
 ```
-
-| Font | Purpose |
-|-----|--------|
-| JetBrains Mono | Coding font |
 
 ---
 

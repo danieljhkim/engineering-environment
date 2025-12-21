@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# check-env - Verify development environment tools are installed
+#
+# Examples:
+#   check-env              # Check all layers
+#   check-env core         # Check only core tools
+#   check-env infra java   # Check infra and java
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [LAYER...]
+
+Verify development environment tools are installed.
+
+Layers:
+  core       Core developer utilities
+  infra      Infrastructure/cloud tooling
+  java       Java toolchain
+  go         Go toolchain
+  nodejs     Node.js toolchain
+  python     Python toolchain
+  data-eng   Data engineering tools
+
+Examples:
+  $(basename "$0")              # Check all layers
+  $(basename "$0") core         # Check only core
+  $(basename "$0") infra java   # Check multiple layers
+EOF
+}
+
+check_tool() {
+    local tool=$1
+    local name=${2:-$tool}
+    
+    if command -v "$tool" &> /dev/null; then
+        local version
+        version=$(eval "$tool --version 2>&1 | head -1" || echo "unknown")
+        printf "${GREEN}✓${NC} %-20s %s\n" "$name" "$version"
+        return 0
+    else
+        printf "${RED}✗${NC} %-20s ${RED}not installed${NC}\n" "$name"
+        return 1
+    fi
+}
+
+check_layer() {
+    local layer=$1
+    local brewfile
+    
+    # Language layers are in languages/ subdirectory
+    case "$layer" in
+        java|go|nodejs|python)
+            brewfile="$REPO_ROOT/languages/$layer/Brewfile"
+            ;;
+        *)
+            brewfile="$REPO_ROOT/$layer/Brewfile"
+            ;;
+    esac
+    
+    if [ ! -f "$brewfile" ]; then
+        echo "${RED}Error: Brewfile not found: $brewfile${NC}" >&2
+        return 1
+    fi
+    
+    echo ""
+    echo "${BLUE}=== Checking $layer ===${NC}"
+    echo ""
+    
+    local failed=0
+    
+    # Parse Brewfile for brew and cask entries
+    while IFS= read -r line; do
+        if [[ $line =~ ^brew[[:space:]]+\"([^\"]+)\" ]]; then
+            local pkg="${BASH_REMATCH[1]}"
+            # Extract binary name (handle packages like openjdk@21)
+            local bin="${pkg%%@*}"
+            check_tool "$bin" "$pkg" || ((failed++))
+        fi
+    done < "$brewfile"
+    
+    return $failed
+}
+
+# Parse arguments
+if [ $# -eq 0 ]; then
+    # Check all layers
+    layers=(core infra java go nodejs python data-eng)
+else
+    # Check specified layers
+    layers=("$@")
+fi
+
+# Handle help
+for arg in "$@"; do
+    if [ "$arg" = "-h" ] || [ "$arg" = "--help" ]; then
+        show_usage
+        exit 0
+    fi
+done
+
+echo "${BLUE}Development Environment Check${NC}"
+
+total_failed=0
+for layer in "${layers[@]}"; do
+    if check_layer "$layer"; then
+        :
+    else
+        ((total_failed += $?))
+    fi
+done
+
+echo ""
+if [ $total_failed -eq 0 ]; then
+    echo "${GREEN}✓ All tools are installed${NC}"
+    exit 0
+else
+    echo "${RED}✗ $total_failed tool(s) missing${NC}"
+    echo ""
+    echo "Run bootstrap commands to install missing tools:"
+    for layer in "${layers[@]}"; do
+        echo "  make bootstrap-$layer"
+    done
+    exit 1
+fi

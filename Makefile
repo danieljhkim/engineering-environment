@@ -29,41 +29,41 @@ help:
 
 bootstrap-core:
 	@echo "🔧 Installing core developer utilities"
-	brew bundle --file core/Brewfile.core
+	brew bundle --file core/Brewfile
 	@echo "✅ Core tools installed"
 
 bootstrap-infra:
 	@echo "☁️ Installing infra tooling"
-	brew bundle --file infra/Brewfile.infra
+	brew bundle --file infra/Brewfile
 	@echo "✅ Infra tools installed"
 
 bootstrap-java:
 	@echo "☕ Installing Java tooling (non-runtime)"
-	brew bundle --file java/Brewfile.java
-	@echo "ℹ️  JDK version pinning is handled via asdf (see java/SETUP.md)"
+	brew bundle --file languages/java/Brewfile
+	@echo "ℹ️  JDK version pinning is handled via asdf (see languages/java/SETUP.md)"
 	@echo "✅ Java tooling installed"
 
 bootstrap-go:
 	@echo "🐹 Installing Go tooling (non-runtime)"
-	brew bundle --file go/Brewfile.go
-	@echo "ℹ️  Go version pinning is handled via asdf (see go/SETUP.md)"
+	brew bundle --file languages/go/Brewfile
+	@echo "ℹ️  Go version pinning is handled via asdf (see languages/go/SETUP.md)"
 	@echo "✅ Go tooling installed"
 
 bootstrap-node:
 	@echo "🟢 Installing Node.js tooling (non-runtime)"
-	brew bundle --file nodejs/Brewfile.nodejs
-	@echo "ℹ️  Node.js version pinning is handled via asdf (see nodejs/SETUP.md)"
+	brew bundle --file languages/nodejs/Brewfile
+	@echo "ℹ️  Node.js version pinning is handled via asdf (see languages/nodejs/SETUP.md)"
 	@echo "✅ Node.js tooling installed"
 
 bootstrap-python:
 	@echo "🐍 Installing Python tooling (non-runtime)"
-	brew bundle --file python/Brewfile.python
-	@echo "ℹ️  Python version pinning is handled via asdf (see python/SETUP.md)"
+	brew bundle --file languages/python/Brewfile
+	@echo "ℹ️  Python version pinning is handled via asdf (see languages/python/SETUP.md)"
 	@echo "✅ Python tooling installed"
 
 bootstrap-data-eng:
 	@echo "📊 Installing data engineering tooling"
-	brew bundle --file data-eng/Brewfile.data-eng
+	brew bundle --file data-eng/Brewfile
 	@echo "✅ Data engineering tools installed"
 
 # -----------------------------

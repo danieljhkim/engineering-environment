@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+# generate-changelog - Create changelog from git history
+#
+# Examples:
+#   generate-changelog              # Since last tag
+#   generate-changelog v1.0.0       # Since specific tag
+#   generate-changelog v1.0.0 HEAD  # Between tags
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [from-ref] [to-ref]
+
+Generate CHANGELOG.md from git commit history.
+
+Arguments:
+  from-ref    Starting reference (tag/commit) (default: last tag)
+  to-ref      Ending reference (default: HEAD)
+
+Follows Conventional Commits format:
+  - feat: New features
+  - fix: Bug fixes
+  - docs: Documentation changes
+  - refactor: Code refactoring
+  - perf: Performance improvements
+  - test: Test changes
+  - chore: Maintenance tasks
+
+Examples:
+  $(basename "$0")                # Since last tag to HEAD
+  $(basename "$0") v1.0.0         # Since v1.0.0 to HEAD
+  $(basename "$0") v1.0.0 v2.0.0  # Between v1.0.0 and v2.0.0
+EOF
+}
+
+# Check if we're in a git repo
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "Error: Not a git repository" >&2
+    exit 1
+fi
+
+FROM_REF=""
+TO_REF="HEAD"
+
+# Parse arguments
+if [ $# -gt 0 ]; then
+    if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+        show_usage
+        exit 0
+    fi
+    FROM_REF="$1"
+fi
+
+if [ $# -gt 1 ]; then
+    TO_REF="$2"
+fi
+
+# If no FROM_REF specified, try to find last tag
+if [ -z "$FROM_REF" ]; then
+    LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+    if [ -n "$LAST_TAG" ]; then
+        FROM_REF="$LAST_TAG"
+        echo "${YELLOW}Using last tag: $FROM_REF${NC}"
+    else
+        # No tags, use first commit
+        FROM_REF=$(git rev-list --max-parents=0 HEAD 2>/dev/null || echo "HEAD")
+        echo "${YELLOW}No tags found, using first commit${NC}"
+    fi
+else
+    # Validate FROM_REF exists
+    if ! git rev-parse "$FROM_REF" > /dev/null 2>&1; then
+        echo "Error: Reference not found: $FROM_REF" >&2
+        exit 1
+    fi
+fi
+
+# Validate TO_REF
+if ! git rev-parse "$TO_REF" > /dev/null 2>&1; then
+    echo "Error: Reference not found: $TO_REF" >&2
+    exit 1
+fi
+
+echo "${BLUE}Generating changelog from $FROM_REF to $TO_REF${NC}"
+echo ""
+
+# Create temporary file for changelog
+TEMP_FILE=$(mktemp)
+
+# Get current date
+DATE=$(date +%Y-%m-%d)
+
+# Header
+echo "# Changelog" > "$TEMP_FILE"
+echo "" >> "$TEMP_FILE"
+echo "## [$TO_REF] - $DATE" >> "$TEMP_FILE"
+echo "" >> "$TEMP_FILE"
+
+# Function to extract commits by type
+extract_commits() {
+    local type=$1
+    local title=$2
+    
+    # Get commits matching the type
+    COMMITS=$(git log "$FROM_REF..$TO_REF" --pretty=format:"%s" --no-merges | \
+              grep "^$type:" || true)
+    
+    if [ -n "$COMMITS" ]; then
+        echo "### $title" >> "$TEMP_FILE"
+        echo "" >> "$TEMP_FILE"
+        
+        while IFS= read -r commit; do
+            # Remove type prefix and format
+            MSG=$(echo "$commit" | sed "s/^$type: //")
+            echo "- $MSG" >> "$TEMP_FILE"
+        done <<< "$COMMITS"
+        
+        echo "" >> "$TEMP_FILE"
+    fi
+}
+
+# Extract commits by type
+extract_commits "feat" "✨ Features"
+extract_commits "fix" "🐛 Bug Fixes"
+extract_commits "perf" "⚡ Performance"
+extract_commits "refactor" "♻️  Refactor"
+extract_commits "docs" "📝 Documentation"
+extract_commits "test" "✅ Tests"
+extract_commits "chore" "🔧 Chores"
+
+# Get other commits (not following conventional commits)
+OTHER_COMMITS=$(git log "$FROM_REF..$TO_REF" --pretty=format:"%s" --no-merges | \
+                grep -v "^feat:" | \
+                grep -v "^fix:" | \
+                grep -v "^docs:" | \
+                grep -v "^refactor:" | \
+                grep -v "^perf:" | \
+                grep -v "^test:" | \
+                grep -v "^chore:" || true)
+
+if [ -n "$OTHER_COMMITS" ]; then
+    echo "### 📦 Other Changes" >> "$TEMP_FILE"
+    echo "" >> "$TEMP_FILE"
+    
+    while IFS= read -r commit; do
+        echo "- $commit" >> "$TEMP_FILE"
+    done <<< "$OTHER_COMMITS"
+    
+    echo "" >> "$TEMP_FILE"
+fi
+
+# Show stats
+TOTAL_COMMITS=$(git rev-list --count "$FROM_REF..$TO_REF" --no-merges)
+CONTRIBUTORS=$(git log "$FROM_REF..$TO_REF" --format="%aN" --no-merges | sort -u | wc -l | tr -d ' ')
+
+echo "### 📊 Stats" >> "$TEMP_FILE"
+echo "" >> "$TEMP_FILE"
+echo "- Total commits: $TOTAL_COMMITS" >> "$TEMP_FILE"
+echo "- Contributors: $CONTRIBUTORS" >> "$TEMP_FILE"
+echo "" >> "$TEMP_FILE"
+
+# Show full diff
+echo "---" >> "$TEMP_FILE"
+echo "" >> "$TEMP_FILE"
+echo "**Full Changelog**: https://github.com/USER/REPO/compare/${FROM_REF}...${TO_REF}" >> "$TEMP_FILE"
+echo "" >> "$TEMP_FILE"
+
+# Display the changelog
+cat "$TEMP_FILE"
+
+# Prompt to save
+echo ""
+read -p "Save to CHANGELOG.md? (y/N) " -n 1 -r
+echo
+
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [ -f CHANGELOG.md ]; then
+        # Prepend to existing changelog
+        EXISTING=$(mktemp)
+        cat CHANGELOG.md > "$EXISTING"
+        cat "$TEMP_FILE" > CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        cat "$EXISTING" >> CHANGELOG.md
+        rm -f "$EXISTING"
+        echo "${GREEN}✓ Prepended to CHANGELOG.md${NC}"
+    else
+        # Create new changelog
+        cat "$TEMP_FILE" > CHANGELOG.md
+        echo "${GREEN}✓ Created CHANGELOG.md${NC}"
+    fi
+else
+    echo "Not saved"
+fi
+
+# Cleanup
+rm -f "$TEMP_FILE"

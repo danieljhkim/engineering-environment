@@ -7,19 +7,6 @@ This document defines **infrastructure-focused developer tooling** used for:
 - Cloud-native services
 - Networking, containers, and ops workflows
 
-It **builds on top of** the core developer utilities and intentionally excludes:
-- Language runtimes (Java / Go / Python / Node)
-- IDE-specific configuration
-
----
-
-## Goals
-
-- Predictable, scriptable infra tooling
-- CLI-first workflows
-- Safe defaults for large repos and clusters
-- Minimal background CPU when idle
-
 ---
 
 ## ☁️ Cloud CLIs
@@ -92,16 +79,3 @@ It **builds on top of** the core developer utilities and intentionally excludes:
 - Avoid GUI-only workflows
 - Prefer declarative configs checked into git
 - Keep cloud credentials ephemeral (SSO / short-lived tokens)
-
----
-
-## Quick verification
-
-```bash
-aws --version
-kubectl version --client
-terraform version
-docker --version
-```
-
-

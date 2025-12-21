@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# venv-create - Create Python virtual environment with common packages
+#
+# Examples:
+#   venv-create           # Create .venv with current Python
+#   venv-create 3.12      # Create .venv with Python 3.12
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [python-version]
+
+Create a Python virtual environment with upgraded tools.
+
+Arguments:
+  python-version    Python version (e.g., 3.12, 3.11) (default: current)
+
+The script will:
+  1. Create .venv directory
+  2. Upgrade pip, setuptools, and wheel
+  3. Show activation command
+
+Examples:
+  $(basename "$0")        # Use current Python
+  $(basename "$0") 3.12   # Use Python 3.12
+EOF
+}
+
+VENV_DIR=".venv"
+PYTHON_CMD="python"
+
+# Parse arguments
+if [ $# -gt 0 ]; then
+    if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+        show_usage
+        exit 0
+    else
+        PYTHON_CMD="python$1"
+    fi
+fi
+
+# Check if Python exists
+if ! command -v "$PYTHON_CMD" &> /dev/null; then
+    echo "Error: $PYTHON_CMD not found" >&2
+    echo ""
+    echo "Available Python versions:"
+    compgen -c python | grep "^python[0-9]" | sort -V || echo "  None found"
+    exit 1
+fi
+
+# Show Python version
+PYTHON_VERSION=$($PYTHON_CMD --version)
+echo "${BLUE}Creating virtual environment${NC}"
+echo "Python: $PYTHON_VERSION"
+echo ""
+
+# Check if venv already exists
+if [ -d "$VENV_DIR" ]; then
+    echo "Error: $VENV_DIR already exists" >&2
+    echo "Remove it first: rm -rf $VENV_DIR"
+    exit 1
+fi
+
+# Create venv
+echo "${YELLOW}Creating $VENV_DIR...${NC}"
+$PYTHON_CMD -m venv "$VENV_DIR"
+echo ""
+
+# Upgrade core packages
+echo "${YELLOW}Upgrading pip, setuptools, and wheel...${NC}"
+"$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel --quiet
+echo ""
+
+# Show installed versions
+echo "${GREEN}✓ Virtual environment created${NC}"
+echo ""
+echo "Installed tools:"
+"$VENV_DIR/bin/pip" --version
+"$VENV_DIR/bin/python" --version
+echo ""
+
+echo "To activate:"
+echo "${YELLOW}  source $VENV_DIR/bin/activate${NC}"
+echo ""
+echo "To deactivate:"
+echo "  deactivate"
+echo ""
+echo "To remove:"
+echo "  rm -rf $VENV_DIR"

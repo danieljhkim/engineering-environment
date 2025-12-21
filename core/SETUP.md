@@ -2,13 +2,6 @@
 
 This document defines the **baseline developer toolchain** shared across all languages.
 
-It intentionally excludes:
-- Language-specific runtimes (Java / Go / Python / Node)
-- Databases, containers, observability stacks
-- Heavy GUI or infra tooling
-
-Those belong in language- or domain-specific directories.
-
 ---
 
 ## 🐚 Shell & Prompt

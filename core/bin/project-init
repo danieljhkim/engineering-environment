@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+# project-init - Initialize new project structure
+#
+# Examples:
+#   project-init python myapp    # Create Python project
+#   project-init node myapp      # Create Node.js project
+#   project-init go myapp        # Create Go project
+
+set -euo pipefail
+
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") <type> <name>
+
+Initialize a new project with common files.
+
+Arguments:
+  type    Project type: python, node, go
+  name    Project name (directory will be created)
+
+Creates:
+  - Project directory
+  - .gitignore
+  - .editorconfig
+  - README.md template
+  - Type-specific files
+
+Examples:
+  $(basename "$0") python myapp
+  $(basename "$0") node myapp
+  $(basename "$0") go myapp
+EOF
+}
+
+if [ $# -lt 2 ]; then
+    show_usage
+    exit 1
+fi
+
+TYPE="$1"
+NAME="$2"
+
+if [ "$TYPE" = "-h" ] || [ "$TYPE" = "--help" ]; then
+    show_usage
+    exit 0
+fi
+
+if [ -d "$NAME" ]; then
+    echo "Error: Directory already exists: $NAME" >&2
+    exit 1
+fi
+
+case "$TYPE" in
+    python|node|nodejs|go)
+        ;;
+    *)
+        echo "Error: Unknown project type: $TYPE" >&2
+        echo "Supported: python, node, go"
+        exit 1
+        ;;
+esac
+
+echo "${BLUE}Creating $TYPE project: $NAME${NC}"
+echo ""
+
+# Create directory
+mkdir -p "$NAME"
+cd "$NAME"
+
+# Create .editorconfig
+cat > .editorconfig << 'EOF'
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.go]
+indent_style = tab
+
+[Makefile]
+indent_style = tab
+EOF
+
+echo "${GREEN}✓${NC} Created .editorconfig"
+
+# Create README
+cat > README.md << EOF
+# $NAME
+
+## Setup
+
+TODO: Add setup instructions
+
+## Development
+
+TODO: Add development instructions
+
+## Testing
+
+TODO: Add testing instructions
+
+## Deployment
+
+TODO: Add deployment instructions
+EOF
+
+echo "${GREEN}✓${NC} Created README.md"
+
+# Type-specific files
+case "$TYPE" in
+    python)
+        cat > .gitignore << 'EOF'
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# macOS
+.DS_Store
+EOF
+        echo "${GREEN}✓${NC} Created .gitignore (Python)"
+        echo ""
+        echo "Next steps:"
+        echo "  cd $NAME"
+        echo "  venv-create"
+        echo "  source .venv/bin/activate"
+        ;;
+        
+    node|nodejs)
+        cat > .gitignore << 'EOF'
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+
+# Build
+dist/
+build/
+out/
+.next/
+.nuxt/
+.cache/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# macOS
+.DS_Store
+EOF
+        
+        cat > package.json << EOF
+{
+  "name": "$NAME",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
+EOF
+        echo "${GREEN}✓${NC} Created .gitignore (Node.js)"
+        echo "${GREEN}✓${NC} Created package.json"
+        echo ""
+        echo "Next steps:"
+        echo "  cd $NAME"
+        echo "  pnpm install"
+        ;;
+        
+    go)
+        cat > .gitignore << 'EOF'
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# macOS
+.DS_Store
+EOF
+        
+        # Create main.go
+        cat > main.go << EOF
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, World!")
+}
+EOF
+        echo "${GREEN}✓${NC} Created .gitignore (Go)"
+        echo "${GREEN}✓${NC} Created main.go"
+        echo ""
+        echo "Next steps:"
+        echo "  cd $NAME"
+        echo "  go mod init github.com/USER/$NAME"
+        echo "  go run main.go"
+        ;;
+esac
+
+echo ""
+echo "${GREEN}✓ Project initialized${NC}"
