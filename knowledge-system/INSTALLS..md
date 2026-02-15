@@ -26,13 +26,3 @@ Used for dashboards, project tables, and task queries.
 2. Community plugins → Browse
 3. Search **Dataview**
 4. Install and Enable
-
----
-
-## Optional
-
-### Git
-Useful if you version templates, dashboards, or system notes.
-
-```bash
-git --version

@@ -64,8 +64,8 @@ In a repo `.venv`:
 ```bash
 pip install pyspark pandas pyarrow fastparquet
 pip install duckdb sqlalchemy psycopg2-binary
-pip install dbt-core dbt-postgres
 pip install apache-airflow
+pipx install dbt-core dbt-postgres
 ```
 
 Notes:

@@ -7,7 +7,7 @@ This document lists **only the baseline tools** required for a productive develo
 ## 🧱 Core CLI Utilities
 
 ```bash
-brew install git gh curl wget tree jq yq ripgrep fd bat htop watch coreutils
+brew install git gh curl wget tree eza jq yq ripgrep fd bat htop watch coreutils
 ```
 
 | Tool | Purpose |
@@ -17,6 +17,7 @@ brew install git gh curl wget tree jq yq ripgrep fd bat htop watch coreutils
 | `curl` | HTTP requests |
 | `wget` | File downloads |
 | `tree` | Directory visualization |
+| `eza` | Better `ls` |
 | `jq` | JSON processing |
 | `yq` | YAML processing |
 | `ripgrep` | Fast code search |

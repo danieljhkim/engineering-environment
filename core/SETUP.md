@@ -37,6 +37,23 @@ This document defines the **baseline developer toolchain** shared across all lan
 - **Why:** Orders of magnitude faster
 - **Used by:** `fzf`
 
+### bat
+- **Role:** Better `cat` (syntax-highlighted file viewer)
+- **Why:** Fast previews in terminal + integrates well with `fzf`
+- **Config:** `~/.config/bat/config`
+- **Common setup:**
+  - `bat --generate-config-file`
+  - Set theme/paging as needed (e.g., `--theme`, `--paging=never`)
+
+### eza
+- **Role:** Modern `ls` replacement (colors, icons, git status)
+- **Why:** More readable directory listings by default
+- **Config:** Usually via shell aliases in `~/.zshrc` (flags + defaults)
+- **Common setup:**
+  - `alias ls='eza'`
+  - `alias ll='eza -lah --git'`
+  - `alias tree='eza --tree'`
+
 ### ripgrep (rg)
 - **Role:** Ultra-fast text search
 - **Why:** Handles millions of lines instantly
