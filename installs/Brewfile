@@ -1,0 +1,113 @@
+# core/Brewfile
+# Baseline developer utilities
+
+tap "homebrew/bundle"
+tap "homebrew/cask-fonts"
+
+
+############# Core CLI #############
+brew "git"
+brew "gh"
+brew "curl"
+brew "wget"
+brew "tree"
+brew "eza"
+brew "jq"
+brew "yq"
+brew "ripgrep"
+brew "fd"
+brew "bat"
+brew "watch"
+brew "coreutils"
+
+
+############# Optional CLI quality-of-life #############
+brew "lazygit"
+brew "glow" # Terminal-based markdown viewer
+
+
+############# Shell / Prompt / Multiplexing #############
+brew "zsh"
+brew "fzf"
+brew "zoxide"
+brew "starship"
+brew "tmux"
+
+
+############# grpc #############
+brew "protobuf"     # protoc compiler
+brew "buf"          # protobuf lint/build tooling
+brew "grpcurl"      # gRPC debugging
+
+
+############# version management #############
+brew "asdf"
+
+
+############# Containers #############
+brew "docker"
+
+
+############# Fonts #############
+cask "font-jetbrains-mono"
+cask "font-jetbrains-mono-nerd-font"
+
+
+############# System Monitoring #############
+brew "htop"
+brew "ncdu"
+brew "btop"
+cask "stats"
+
+
+############# GUI / Apps #############
+cask "alt-tab"
+cask "raycast"
+cask "rectangle"
+cask "obsidian"
+cask "wezterm"
+cask "iterm2"
+cask "dbeaver-community"
+
+
+############# Editors #############
+brew "neovim"
+
+
+############# AI #############
+cask "codex"
+cask "ollama"
+
+
+############# Python related #############
+brew "pipx"
+brew "uv"
+brew "ruff"
+
+
+############# Java related #############
+brew "maven"
+brew "gradle"
+brew "temurin"     # Eclipse Temurin JDK
+brew "openjdk@21"  # Example pinned JDK
+
+
+############# Go related #############
+brew "delve"        # dlv debugger
+brew "golangci-lint" # fast multi-linter
+brew "go"          # Only if you want Homebrew Go instead of asdf
+brew "gofumpt"     # Stricter gofmt (can also be installed via 'go install')
+brew "k6"          # Load testing (handy for services)
+
+
+############# Data engineering #############
+brew "postgresql@18"
+brew "apache-spark"
+brew "duckdb"
+brew "parquet-tools"
+brew "kcat" # Streaming / Kafka tooling
+# Optional / heavier tools (install only if needed)
+# brew "hadoop"
+# brew "hive"
+# brew "kafka"
+# brew "trino"

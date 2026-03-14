@@ -1,0 +1,13 @@
+--hidden
+--follow
+--glob=!.git/*
+--glob=!node_modules/*
+--glob=!target/*
+--glob=!build/*
+--glob=!out/*
+--glob=!dist/*
+--glob=!.gradle/*
+--glob=!.idea/*
+--glob=!.m2/*
+--glob=!.box/*
+--glob=!logs/*
