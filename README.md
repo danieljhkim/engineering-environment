@@ -5,3 +5,9 @@ Every time we get a new computer, whether for work or personal, it takes way too
 To make things easier, I created **engineering-environment**. 
 
 Feel free to use it.
+
+## Installs
+
+- **macOS** — `brew bundle --file=installs/Brewfile`
+- **Linux (Debian/Ubuntu)** — `installs/install-linux.sh` installs the core/CLI/shell/system
+  tooling subset (no GUI/AI/language/data-engineering packages).
